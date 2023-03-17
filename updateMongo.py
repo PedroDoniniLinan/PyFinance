@@ -1,6 +1,5 @@
 from lib import data
 from lib.tools import *
-from lib import mongo
 from lib.constants import *
 import pandas as pd
 import datetime as dt
@@ -351,14 +350,14 @@ if __name__ == '__main__':
         # currencies = ['BRL', DEBUG_CURRENCY]
     else:
         # currencies = ['ETH']
-        currencies = getActives(CURRENT_DATE)
+        currencies = get_currencies(CURRENT_DATE)
 
 
     validated = True
     print('Starting validation...')
     start_time = time()
     validated = validateRawData(currencies)
-    printIf('Validation: OK', validated)
+    print_if('Validation: OK', validated)
     print("--- %s seconds ---" % (time() - start_time))
 
     if validated:
