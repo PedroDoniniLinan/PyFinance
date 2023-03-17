@@ -1,4 +1,5 @@
 from lib.constants import *
+from lib import mysql_lib
 
 import datetime as dt
 import pandas as pd
@@ -44,10 +45,12 @@ def read(path, currency, filterRemove):
     return df
 
 
-def getActives(date):
-    df = pd.read_csv('csv/data/data_balances.csv')
-    df = df[df[DATE] == date]
+def get_currencies(date):
+    df = mysql_lib.execute_query('queries/general/actives.sql') 
     return sorted(list(set(list(df[CURRENCY].unique()))))
+    # df = pd.read_csv('csv/data/data_balances.csv')
+    # df = df[df[DATE] == date]
+    # return sorted(list(set(list(df[CURRENCY].unique()))))
     # df = pd.read_csv('csv/data/data_exchange.csv')
     # return sorted(list(set(list(df[TICKER].unique())) | set(list(df[CURRENCY].unique()))))
 
@@ -63,6 +66,6 @@ def printVar(text, var):
     print('------------------------------------------------')
     print(var)
 
-def printIf(msg, condition):
+def print_if(msg, condition):
     if condition:
         print(msg)
