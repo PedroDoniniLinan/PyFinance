@@ -1,4 +1,4 @@
-create or replace view pyfinance.trade_income_v2 as
+create or replace view pyfinance.trade_income as
 
 with
 

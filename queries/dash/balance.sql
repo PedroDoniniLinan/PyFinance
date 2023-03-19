@@ -49,7 +49,7 @@ with
             sum(i.income * ex.price) as income
         from income i
             left join pyfinance.exchange_rates ex on (i.calendar_month = ex.calendar_month and i.currency = ex.ticker)
-            left join pyfinance.full_category_mapping cm on (i.subcategory = cm.currency and cm.category_type = 'Income')
+            left join pyfinance.full_category_mapping cm on (i.subcategory = cm.currency)
         group by 1, 2, 3, 4
     ),
 
@@ -61,7 +61,7 @@ with
             p.currency,
             sum(c_value) as income
         from pyfinance.positions p 
-            left join pyfinance.full_category_mapping cm on (p.ticker = cm.currency and cm.category_type = 'Income')
+            left join pyfinance.full_category_mapping cm on (p.ticker = cm.currency)
         where c_value != 0
         group by 1, 2, 3, 4
     ),
@@ -73,7 +73,7 @@ with
             cm.subcategory,
             p.ex_currency as currency,
             sum(trade_income) as income
-        from pyfinance.trade_income_v2 p 
+        from pyfinance.trade_income p 
             left join pyfinance.full_category_mapping cm on (p.ticker = cm.currency)
         where trade_income != 0
         group by 1, 2, 3, 4
@@ -84,7 +84,7 @@ with
             cm.subcategory,
             p.ex_currency as currency,
             sum(c_trade_income) as income
-        from pyfinance.trade_income_v2 p 
+        from pyfinance.trade_income p 
             left join pyfinance.full_category_mapping cm on (p.currency = cm.currency)
         where c_trade_income != 0
         group by 1, 2, 3, 4
@@ -97,9 +97,7 @@ select
     subcategory,
     currency,
     income,
-    -- sum(income) as income,
     -expenses as expenses 
-    -- sum(-expenses) as expenses 
 from (
     select
         calendar_month,
@@ -139,5 +137,3 @@ from (
 ) t
 where income is not null
     or expenses is not null
--- group by 1, 2, 3, 4
--- order by 1, 2, 3

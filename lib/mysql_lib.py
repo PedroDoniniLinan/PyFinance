@@ -1,7 +1,5 @@
-from time import sleep
 import mysql.connector
 import pandas as pd
-import math
 
 
 def execute_query(query_name, query_type='file', mode='select'):
