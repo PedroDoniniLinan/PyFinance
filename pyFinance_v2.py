@@ -90,11 +90,6 @@ def adjustment_block():
         return (time() - start_time)
 
 
-def calculate_balance():
-
-    return 0
-
-
 def dash_block():
     print('\n-------------- Balance block ----------------')
     start_time = time()
