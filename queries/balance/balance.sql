@@ -71,11 +71,22 @@ with
             calendar_month,
             cm.category,
             cm.subcategory,
-            p.currency,
-            sum(income) as income
-        from pyfinance.trade_income p 
-            left join pyfinance.full_category_mapping cm on (p.ticker = cm.currency and cm.category_type = 'Income')
-        where income != 0
+            p.ex_currency as currency,
+            sum(trade_income) as income
+        from pyfinance.trade_income_v2 p 
+            left join pyfinance.full_category_mapping cm on (p.ticker = cm.currency)
+        where trade_income != 0
+        group by 1, 2, 3, 4
+        union all
+        select
+            calendar_month,
+            cm.category,
+            cm.subcategory,
+            p.ex_currency as currency,
+            sum(c_trade_income) as income
+        from pyfinance.trade_income_v2 p 
+            left join pyfinance.full_category_mapping cm on (p.currency = cm.currency)
+        where c_trade_income != 0
         group by 1, 2, 3, 4
     )
 
@@ -85,8 +96,10 @@ select
     category,
     subcategory,
     currency,
-    sum(income) as income,
-    sum(expenses) as expenses 
+    income,
+    -- sum(income) as income,
+    -expenses as expenses 
+    -- sum(-expenses) as expenses 
 from (
     select
         calendar_month,
@@ -94,7 +107,7 @@ from (
         subcategory,
         currency,
         income,
-        0 as expenses
+        null as expenses
     from converted_income
     union all
     select
@@ -103,7 +116,7 @@ from (
         subcategory,
         currency,
         income,
-        0 as expenses
+        null as expenses
     from valuation_income
     union all
     select
@@ -112,7 +125,7 @@ from (
         subcategory,
         currency,
         income,
-        0 as expenses
+        null as expenses
     from trade_income
     union all
     select
@@ -120,11 +133,11 @@ from (
         category,
         subcategory,
         currency,
-        0 as income,
+        null as income,
         expenses
     from converted_expenses
 ) t
 where income is not null
     or expenses is not null
-group by 1, 2, 3, 4
-order by 1, 2, 3
+-- group by 1, 2, 3, 4
+-- order by 1, 2, 3

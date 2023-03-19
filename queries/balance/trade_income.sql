@@ -53,11 +53,11 @@ with
             day(e.calendar_date) as days_passed,
             ex1.price as som_price,
             e.eom_price,
-            day(e.calendar_date)/30 * (e.eom_price-ex1.price) + ex1.price as estimate_1,
+            day(e.calendar_date)/day(last_day(e.calendar_date)) * (e.eom_price-ex1.price) + ex1.price as estimate_1,
             ex2.price as c_som_price,
             ex3.price as c_eom_price,
-            (day(e.calendar_date)/30 * (ex3.price-ex2.price) + ex2.price) as c_price,
-            (day(e.calendar_date)/30 * (ex3.price-ex2.price) + ex2.price) * e.original_trade_price as estimate_2,
+            (day(e.calendar_date)/day(last_day(e.calendar_date)) * (ex3.price-ex2.price) + ex2.price) as c_price,
+            (day(e.calendar_date)/day(last_day(e.calendar_date)) * (ex3.price-ex2.price) + ex2.price) * e.original_trade_price as estimate_2,
             (e.original_trade_price / (eom_price / ex3.price)) * e.eom_price as estimate_3
         from exchanges e
             left join pyfinance.exchange_rates ex1 on (
@@ -84,7 +84,11 @@ with
 
     indirect_calculation as (
         select *,
-            case when days_passed < 5 or days_passed > 25 then (
+            case when currency in ('EUR', 'USD', 'BRL', 'USDC', 'BUSD', 'USDT', 'GUSD') and calendar_month < '2020-01-01' then (
+                coalesce(estimate_2, estimate_3, estimate_1)
+            ) when ticker in ('EUR', 'USD', 'BRL', 'USDC', 'BUSD', 'USDT', 'GUSD') and calendar_month < '2020-01-01' then (
+                coalesce(estimate_1, estimate_3, estimate_2)
+            ) when days_passed < 5 or days_passed > 25 then (
                 0.8*coalesce(estimate_1, estimate_3, estimate_2) 
                 + 0.15*coalesce(estimate_2, estimate_3, estimate_1) 
                 + 0.05*coalesce(estimate_3, estimate_2, estimate_1)
@@ -92,16 +96,7 @@ with
                 0.1*coalesce(estimate_1, estimate_3, estimate_2) 
                 + 0.2*coalesce(estimate_2, estimate_3, estimate_1) 
                 + 0.7*coalesce(estimate_3, estimate_2, estimate_1)
-            ) end as final_estimate,
-            case when days_passed < 5 or days_passed > 25 then (eom_price -
-                (0.8*coalesce(estimate_1, estimate_3, estimate_2) 
-                + 0.15*coalesce(estimate_2, estimate_3, estimate_1) 
-                + 0.05*coalesce(estimate_3, estimate_2, estimate_1))
-            ) else (eom_price - (
-                0.1*coalesce(estimate_1, estimate_3, estimate_2) 
-                + 0.2*coalesce(estimate_2, estimate_3, estimate_1) 
-                + 0.7*coalesce(estimate_3, estimate_2, estimate_1)
-            )) end * units as c_value
+            ) end as final_estimate
         from price_estimation
     )
 
@@ -123,7 +118,7 @@ from (
         calendar_month,
         ticker,
         ex_currency,
-        c_value
+        (eom_price - final_estimate) * units as c_value
     from indirect_calculation
 ) t
 group by 1, 2, 3

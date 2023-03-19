@@ -1,19 +1,15 @@
 # from lib import data
 # from lib.tools import *
-import mysql.connector
+# import mysql.connector
 import pandas as pd
 import datetime as dt
 from time import sleep, time
 
-from lib import validation_lib, tools, mysql_lib
+from lib import tools, mysql_lib
 from lib.constants import *
 
 CURRENT_DATE = '28/02/2023'
 # currencies = tools.get_currencies(CURRENT_DATE)
-
-
-def db_update_block():
-    print('--DB Update block--')
 
 
 def reset_table(b):
@@ -108,8 +104,11 @@ def calculate_balance():
 def balance_block():
     print('\n-------------- Balance block ----------------')
     start_time = time()
-    df_balance = mysql_lib.execute_query('queries/validation/adjustments.sql')
+    df_balance = mysql_lib.execute_query('queries/balance/balance.sql')
     df_balance.to_csv('csv/dashboard/balance.csv', index=False)
+    df_balance = mysql_lib.execute_query('queries/balance/allocation.sql')
+    df_balance.to_csv('csv/dashboard/positions.csv', index=False)
+    print('Success')
     print("--------------- %.4f seconds ---------------" % (time() - start_time))
     return (time() - start_time)
 
@@ -121,7 +120,7 @@ if __name__ == '__main__':
     validated, run_time_v = validation_block()
     if not validated:
         run_time += adjustment_block()
-    run_time += balance_block(['BRL'])        
+    run_time += balance_block()        
     print("\nTotal run time: %.4f seconds" % (run_time + run_time_v))
 
 
