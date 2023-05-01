@@ -137,5 +137,5 @@ with
 
 select *
 from consolidation
-where difference > 0
+where round(difference, 7) != 0
 order by abs(difference) desc

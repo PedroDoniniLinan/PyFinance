@@ -99,11 +99,45 @@ with
             sum(-amount) as delta
         from pyfinance.transfers
         group by 1, 2
+    ),
+
+    consolidation as (
+        select
+            account,
+            currency,
+            calendar_date,
+            balance,
+            (income + expenses + aport + deport + transf_in + transf_out) as calculated_balance,
+            balance - (income + expenses + aport + deport + transf_in + transf_out) as difference,
+            income,
+            expenses,
+            aport,
+            deport,
+            transf_in,
+            transf_out
+        from (
+            select
+                b.*,
+                coalesce(ci.delta, 0) as income,
+                coalesce(co.delta, 0) as expenses,
+                coalesce(a.delta, 0) as aport,
+                coalesce(d.delta, 0) as deport,
+                coalesce(ti.delta, 0) as transf_in,
+                coalesce(t.delta, 0) as transf_out
+            from balances b
+                left join cash_in ci on (ci.account = b.account and ci.currency = b.currency)
+                left join cash_out co on (co.account = b.account and co.currency = b.currency)
+                left join aport a on (a.account = b.account and a.currency = b.currency)
+                left join deport d on (d.account = b.account and d.currency = b.currency)
+                left join transf_in ti on (ti.account = b.account and ti.currency = b.currency)
+                left join transf_out t on (t.account = b.account and t.currency = b.currency)
+        ) t
+        order by 1, 2
     )
 
 
 select
-    'Fix' as tag,
+    'Auto fix' as tag,
     -difference as amount,
     calendar_date,
     account,
@@ -111,37 +145,5 @@ select
     'Buy tax' as subcategory,
     1 as count_to_balance,
     currency
-from (
-    select
-        account,
-        currency,
-        calendar_date,
-        balance,
-        (income + expenses + aport + deport + transf_in + transf_out) as calculated_balance,
-        balance - (income + expenses + aport + deport + transf_in + transf_out) as difference,
-        income,
-        expenses,
-        aport,
-        deport,
-        transf_in,
-        transf_out
-    from (
-        select
-            b.*,
-            coalesce(ci.delta, 0) as income,
-            coalesce(co.delta, 0) as expenses,
-            coalesce(a.delta, 0) as aport,
-            coalesce(d.delta, 0) as deport,
-            coalesce(ti.delta, 0) as transf_in,
-            coalesce(t.delta, 0) as transf_out
-        from balances b
-            left join cash_in ci on (ci.account = b.account and ci.currency = b.currency)
-            left join cash_out co on (co.account = b.account and co.currency = b.currency)
-            left join aport a on (a.account = b.account and a.currency = b.currency)
-            left join deport d on (d.account = b.account and d.currency = b.currency)
-            left join transf_in ti on (ti.account = b.account and ti.currency = b.currency)
-            left join transf_out t on (t.account = b.account and t.currency = b.currency)
-    ) t
-    order by 1, 2
-) tt
-where difference != 0
+from consolidation
+where round(difference, 7) != 0

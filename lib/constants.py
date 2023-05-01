@@ -102,4 +102,6 @@ db = {
     'income_mapping': {'table': 'pyfinance.category_mapping', 'columns':[], 'drop': 'queries/table_creation/drop_mapping.sql', 'create': 'queries/table_creation/mapping.sql'},
     'transfers': {'table': 'pyfinance.transfers', 'columns':['source_acc', 'destination_acc', 'calendar_date', 'amount', 'currency', 'count_to_balance', 'transaction_type']},
     'transactions': {'table': 'pyfinance.transactions', 'columns':['tag', 'amount', 'account', 'calendar_date', 'category', 'subcategory', 'count_to_balance', 'currency']},
+    'irpf': {'table': 'pyfinance.irpf', 'columns':[], 'drop': 'queries/table_creation/drop_irpf.sql', 'create': 'queries/table_creation/irpf.sql'},
+    'sales': {'table': 'pyfinance.sales', 'columns':[], 'drop': 'queries/table_creation/drop_sales.sql', 'create': 'queries/table_creation/sales.sql'},
 }

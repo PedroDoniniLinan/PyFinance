@@ -31,6 +31,7 @@ def db_reset_block(bases=[]):
     print('\n---------------- Reset block -----------------')
     start_time = time()
     for b in bases:
+        print(b)
         try:
             reset_table(b)
         except Exception as e:
@@ -56,13 +57,10 @@ def validation_block():
 
 
 def adjust_minor_differences(df_adjust):
-    # if update:
     df_exp = pd.read_csv('csv/data/data_expenses.csv')
     df_exp = pd.concat([df_exp, df_adjust])
     df_exp = df_exp.reset_index(drop=True)
     df_exp.to_csv('csv/data/data_expenses_adjusted.csv', index=False)
-    # else:
-    #     df_adjust.to_csv('csv/tables/adjustments.csv', index=False)
 
 
 def adjustment_block():
@@ -71,6 +69,7 @@ def adjustment_block():
     df_adjust = mysql_lib.execute_query('queries/validation/adjustments.sql')
     df_adjust[DATE] = df_adjust[DATE].apply(lambda x : x.strftime('%d/%m/%Y'))#.date())
     flag = mysql_lib.execute_query('queries/validation/adjustment_flag.sql')
+    print(df_adjust)
     if flag.iloc[0, 0] == 1:
         adjust_minor_differences(df_adjust)
         db_reset_block(['income', 'adjustments'])
@@ -87,6 +86,7 @@ def adjustment_block():
             return (time() - start_time)
     else:
         print('Adjustment failed...\nMajor discrepancies')
+        raise RuntimeError
         return (time() - start_time)
 
 

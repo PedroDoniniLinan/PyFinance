@@ -76,6 +76,7 @@ with
         from pyfinance.trade_income p 
             left join pyfinance.full_category_mapping cm on (p.ticker = cm.currency)
         where trade_income != 0
+            and p.count_to_balance
         group by 1, 2, 3, 4
         union all
         select
@@ -87,6 +88,7 @@ with
         from pyfinance.trade_income p 
             left join pyfinance.full_category_mapping cm on (p.currency = cm.currency)
         where c_trade_income != 0
+            and p.count_to_balance
         group by 1, 2, 3, 4
     )
 

@@ -145,7 +145,7 @@ with
             ) t
             order by 1, 2
         ) tt
-        where difference != 0
+        where round(difference, 7) != 0
     )
 
 select min(adjust_allowed)

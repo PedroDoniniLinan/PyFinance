@@ -4,12 +4,16 @@ with
 
     exchanges as (
         select
+            e.id,
+            e.count_to_balance,
             e.calendar_date,
             date_format(e.calendar_date, '%Y-%m-01') as calendar_month,
             e.ticker,
             e.currency,
             case when exchange_type = 'Purchase' then e.units else -e.units end as units,
             e.price as original_trade_price,
+            e.tax,
+            e.tax_currency,
             exe.currency as ex_currency,
             day(e.calendar_date) as days_passed,
             exs.price as som_price,
@@ -20,7 +24,7 @@ with
             (day(e.calendar_date)/day(last_day(e.calendar_date)) * (exce.price-excs.price) + excs.price) as c_price,
             (day(e.calendar_date)/day(last_day(e.calendar_date)) * (exce.price-excs.price) + excs.price) * e.price as c_linear_estimate,
             (e.price / (exe.price / exce.price)) * exe.price as proportional_estimate,
-            (0.1 + 1.8*(0.5*day(last_day(e.calendar_date))-day(e.calendar_date))/day(last_day(e.calendar_date))) as linear_alfa
+            (0.1 + 1.8*(0.5*(day(last_day(e.calendar_date))-day(e.calendar_date)))/day(last_day(e.calendar_date))) as linear_alfa
         from pyfinance.exchanges e
             left join pyfinance.exchange_rates exe on (date_format(e.calendar_date, '%Y-%m-01') = exe.calendar_month and e.ticker = exe.ticker)
             left join pyfinance.exchange_rates exs on (
@@ -38,15 +42,19 @@ with
                 and e.currency = exce.ticker
                 and exe.currency = exce.currency
                 )
-        where count_to_balance
+        -- where count_to_balance
     ),
 
     price_estimation as (
         select
+            id,
+            count_to_balance,
             calendar_month,
             calendar_date,
             ticker,
             currency,
+            tax,
+            tax_currency,
             units,
             original_trade_price,
             ex_currency,
@@ -61,9 +69,9 @@ with
             proportional_estimate,
             case when currency = ex_currency then (
                 original_trade_price 
-            ) when currency in ('EUR', 'USD', 'BRL', 'USDC', 'BUSD', 'USDT', 'GUSD') and calendar_month < '2020-01-01' then (
+            ) when currency in ('EUR', 'USD', 'BRL', 'USDC', 'BUSD', 'USDT', 'GUSD') then (
                 coalesce(c_linear_estimate, proportional_estimate, linear_estimate)
-            ) when ticker in ('EUR', 'USD', 'BRL', 'USDC', 'BUSD', 'USDT', 'GUSD') and calendar_month < '2020-01-01' then (
+            ) when ticker in ('EUR', 'USD', 'BRL', 'USDC', 'BUSD', 'USDT', 'GUSD') then (
                 coalesce(linear_estimate, proportional_estimate, c_linear_estimate)
             ) else (
                 linear_alfa * coalesce(linear_estimate, proportional_estimate, c_linear_estimate) 
@@ -74,10 +82,14 @@ with
 
     trade_income as (
         select
+            id,
+            count_to_balance,
             calendar_month,
             calendar_date,
             ticker,
             currency,
+            tax,
+            tax_currency,
             units,
             original_trade_price,
             ex_currency,
